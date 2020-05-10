@@ -1,0 +1,150 @@
+library(rvest)
+library(curl)
+library(tidyverse)
+library(httr)
+
+# get all objects to loop in the urls
+tm_abr <- c("ATL","BOS","NJN","CHH","CHI","CLE","DAL",
+            "DEN","DET","GSW","HOU","IND","LAC","LAL",
+            "MEM","MIA","MIL","MIN","NOH","NYK","OKC",
+            "ORL","PHI","PHO","POR","SEA","SAC","SAS",
+            "TOR","UTA","VAN", "WAS","WSB")
+
+days <- c("01","02","03","04","05","06","07","08","09",
+          "10","11","12","13","14","15","16","17","18",
+          "19","20","21","22","23","24","25","26","27",
+          "28","29","30","31")
+
+mnth <- c("01","02","03","04","05","06","07","08","09",
+          "10","11","12")
+
+#MAP team names into urls (let's focus on 1996 so dont bracket that)
+
+url <- "https://www.basketball-reference.com/boxscores/pbp/1996{month}{date}0{home_team}.html"
+url2 <- map(.x = c(tm_abr),
+            .f = function(x){gsub(x = url, pattern = "\\{home_team\\}", 
+                                  replacement = x)}) %>% 
+        unlist
+
+url3 <- map(.x = c(days),
+            .f = function(x){gsub(x = url2, pattern = "\\{date\\}", 
+                                  replacement = x)}) %>% 
+        unlist
+
+url4 <- map(.x = c(mnth),
+            .f = function(x){gsub(x = url3, pattern = "\\{month\\}", 
+                                  replacement = x)}) %>% 
+        unlist
+
+
+check_link <- sapply(url4, url_success) %>%
+  as.data.frame() 
+
+saveRDS(check_link, "check_links.rds")
+
+#this should give me the row numbers for all links in that 28k pile with matches
+#for 2019 let's reduce to playoffs only while figuring this all out
+
+link_hit_index <- which(check_link == TRUE)
+
+#now reduce to only links that are live
+
+url_1996 <- url4[link_hit_index]
+saveRDS(url_1996, "activeURLs_1996.rds")
+
+
+nba_1996 <- map_dfr(.x = url_1996,
+                    .f = function(x){Sys.sleep(2); cat(1); 
+                     df <- read_html(curl(x, handle = curl::new_handle("useragent" = "Mozilla/5.0"))) %>% 
+                       html_nodes("table") %>% 
+                       html_table(fill = T) %>%
+                       .[[1]] %>%
+                       setNames(paste0(c("time","away_play","away_score",
+                                         "combined_Score","home_score", "home_play")))
+
+  away_tm <- df[1,2]
+  home_tm <- df[1,6]
+
+df$away_team <- away_tm
+df$home_team <- home_tm
+df$date <- str_extract(string = x, pattern = "(?<=pbp\\/)\\d{8}")
+df$year <- str_extract(string = x, pattern = "(?<=pbp\\/)\\d{4}")
+df$month <- str_extract(string = x, pattern = "(?<=pbp\\/\\d{4})\\d{2}")
+df$day <- str_extract(string = x, pattern = "(?<=pbp\\/\\d{6})\\d{2}")
+df$playid <- c(1:nrow(df))
+df$gameid <- paste0(df$away_team,df$home_team,df$date)
+df$gameid <- str_replace_all(df$gameid, " ", "")
+
+df 
+
+})
+
+saveRDS(nba_1996, "nba_pbp_late_1996.rds")
+
+# make URLs for calendar 1997
+
+url <- "https://www.basketball-reference.com/boxscores/pbp/1997{month}{date}0{home_team}.html"
+url2 <- map(.x = c(tm_abr),
+            .f = function(x){gsub(x = url, pattern = "\\{home_team\\}", 
+                                  replacement = x)}) %>% 
+        unlist
+
+url3 <- map(.x = c(days),
+            .f = function(x){gsub(x = url2, pattern = "\\{date\\}", 
+                                  replacement = x)}) %>% 
+        unlist
+
+url4 <- map(.x = c(mnth),
+            .f = function(x){gsub(x = url3, pattern = "\\{month\\}", 
+                                  replacement = x)}) %>% 
+        unlist
+
+
+check_link <- sapply(url4, url_success) %>%
+  as.data.frame() 
+
+saveRDS(check_link, "check_links97.rds")
+
+#this should give me the row numbers for all links in the pile with matches
+#for 2019 let's reduce to playoffs only while figuring this all out
+
+link_hit_index <- which(check_link == TRUE)
+
+#now reduce to only links that are live
+
+url_1997 <- url4[link_hit_index]
+saveRDS(url_1997, "activeURLs_97.rds")
+
+#1997 step 2 of 2
+
+nba_1997 <- map_dfr(.x = url_1997,
+                    .f = function(x){Sys.sleep(2); cat(1); 
+                     df <- read_html(curl(x, handle = curl::new_handle("useragent" = "Mozilla/5.0"))) %>% 
+                       html_nodes("table") %>% 
+                       html_table(fill = T) %>%
+                       .[[1]] %>%
+                       setNames(paste0(c("time","away_play","away_score",
+                                         "combined_Score","home_score", "home_play")))
+
+  away_tm <- df[1,2]
+  home_tm <- df[1,6]
+
+df$away_team <- away_tm
+df$home_team <- home_tm
+df$date <- str_extract(string = x, pattern = "(?<=pbp\\/)\\d{8}")
+df$year <- str_extract(string = x, pattern = "(?<=pbp\\/)\\d{4}")
+df$month <- str_extract(string = x, pattern = "(?<=pbp\\/\\d{4})\\d{2}")
+df$day <- str_extract(string = x, pattern = "(?<=pbp\\/\\d{6})\\d{2}")
+df$playid <- c(1:nrow(df))
+df$gameid <- paste0(df$away_team,df$home_team,df$date)
+df$gameid <- str_replace_all(df$gameid, " ", "")
+
+df 
+
+})
+
+saveRDS(nba_1997, "nba_pbp_late_1997.rds")
+
+nba_pbp_full_96_97 <- bind_rows(nba_1996, nba_1997)
+
+saveRDS(nba_pbp_full_96_97, "nba_pbp_full_96_97.rds")
