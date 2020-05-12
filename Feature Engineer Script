@@ -5,6 +5,9 @@ nba <- read_rds("nba_pbp_full_96_97.rds")
 
 #all the feature engineering calls:
 nba2 <- nba %>%
+  #take out early 1997 season
+  mutate(yr_96_97 = if_else(year == 1997 & month > 7, 0, 1)) %>%
+  filter(yr_96_97 == 1) %>%
   mutate_at(c("month", "day", "playid"), as.numeric) %>%
   filter(time != "Time") %>%
   separate(time, c("minutes","seconds","tenths"), remove = FALSE) %>%
@@ -73,7 +76,23 @@ nba2 <- nba %>%
   mutate(difference_after_play = if_else(possession == home_team,
                                          home_score_after_shot - away_score_after_shot, away_score_after_shot - home_score_after_shot),
          difference_before_play = if_else(possession == home_team,
-                                          home_score_before_shot - away_score_before_shot, away_score_before_shot - home_score_before_shot))
+                                          home_score_before_shot - away_score_before_shot, away_score_before_shot - home_score_before_shot)) %>%
+  mutate(fg_length = str_extract(play, "(?<=from ).*?(?= ft)")) %>%
+  mutate(fg_result = case_when(
+    str_detect(play, "misses") & is.na(free_throw_make) ~ "0",
+    str_detect(play, "makes") & is.na(free_throw_make)  ~ "1",
+    TRUE ~ "NA"
+  )) %>% 
+  mutate_at(vars(fg_result), as.numeric) %>%
+    #extract shots with ft lengths
+  mutate(shot_type = str_extract(play, "(?<=-pt ).*?(?= from)")) %>%
+  #combine with shots w no ft length (like layups)
+  mutate(shot_type = if_else(is.na(shot_type), str_extract(play, "(?<=-pt ).*"), shot_type)) %>% 
+  #find parentheses and remove leaving just shot type
+  mutate(shot_type = if_else(str_detect(shot_type, ".*?\\("), str_extract(shot_type, ".*?(?= \\()"), shot_type)) %>%
+  mutate(shot_type = trimws(shot_type)) %>%
+  #playoff date cutoff will need to be customized per year referencing nba ref
+  mutate(playoffs = if_else(month >= 4 & day >= 24, "playoffs", "regular"))
 
 
 
