@@ -94,7 +94,6 @@ nba2 <- nba %>%
   #playoff date cutoff will need to be customized per year referencing nba ref
   mutate(playoffs = if_else(month >= 4 & day >= 24, "playoffs", "regular"))%>%
   mutate(player_assist = str_extract(play, "(?<=\\(assist by ).*?(?=\\))")) %>%
-  select(play, player_assist) %>%
   mutate(player_steal = str_extract(play, "(?<=steal by ).*?(?=\\))" )) %>%
   mutate(player_turnover = str_extract(play, "(?<=steal by ).*?(?=\\))")) %>%
   mutate(player_block = str_extract(play, "(?<=block by ).*?(?=\\))")) %>%
