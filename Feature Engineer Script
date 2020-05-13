@@ -92,9 +92,15 @@ nba2 <- nba %>%
   mutate(shot_type = if_else(str_detect(shot_type, ".*?\\("), str_extract(shot_type, ".*?(?= \\()"), shot_type)) %>%
   mutate(shot_type = trimws(shot_type)) %>%
   #playoff date cutoff will need to be customized per year referencing nba ref
-  mutate(playoffs = if_else(month >= 4 & day >= 24, "playoffs", "regular"))
-
-
+  mutate(playoffs = if_else(month >= 4 & day >= 24, "playoffs", "regular"))%>%
+  mutate(player_assist = str_extract(play, "(?<=\\(assist by ).*?(?=\\))")) %>%
+  select(play, player_assist) %>%
+  mutate(player_steal = str_extract(play, "(?<=steal by ).*?(?=\\))" )) %>%
+  mutate(player_turnover = str_extract(play, "(?<=steal by ).*?(?=\\))")) %>%
+  mutate(player_block = str_extract(play, "(?<=block by ).*?(?=\\))")) %>%
+  mutate(player_offensive_rebound = str_extract(play, "(?<=Offensive rebound by ).*")) %>%
+  mutate(player_defensive_rebound = str_extract(play, "(?<=Defensive rebound by ).*")) %>%
+  mutate(player_travelling = str_extract(play, "(?<=Turnover by ).*? (?=\\(traveling\\))"))
 
 
 
