@@ -5,9 +5,6 @@ nba <- read_rds("nba_pbp_full_96_97.rds")
 
 #all the feature engineering calls:
 nba2 <- nba %>%
-  #take out early 1997 season
-  mutate(yr_96_97 = if_else(year == 1997 & month > 7, 0, 1)) %>%
-  filter(yr_96_97 == 1) %>%
   mutate_at(c("month", "day", "playid"), as.numeric) %>%
   filter(time != "Time") %>%
   separate(time, c("minutes","seconds","tenths"), remove = FALSE) %>%
@@ -58,7 +55,7 @@ nba2 <- nba %>%
     str_detect(play, ".*?misses\\s.*?free\\sthrow.*") ~ "0",
     str_detect(play, ".*?[^[misses|makes]].*") ~ "na")) %>%
   mutate_at(vars(free_throw_make), as.numeric)  %>%
-  #netral plays are listed in both teams so this parses those out
+  #neutral plays are listed in both teams so this parses those out
   mutate(possession = if_else(nchar(away_play) > 0 & nchar(home_play) > 0, 
                               "", if_else(nchar(away_play) > 0, 
                                       away_team,
@@ -92,15 +89,39 @@ nba2 <- nba %>%
   mutate(shot_type = if_else(str_detect(shot_type, ".*?\\("), str_extract(shot_type, ".*?(?= \\()"), shot_type)) %>%
   mutate(shot_type = trimws(shot_type)) %>%
   #playoff date cutoff will need to be customized per year referencing nba ref
-  mutate(playoffs = if_else(month >= 4 & day >= 24, "playoffs", "regular"))%>%
+  #mutate(playoffs = if_else(month >= 4 & day >= 24, "playoffs", "regular"))%>%
   mutate(player_assist = str_extract(play, "(?<=\\(assist by ).*?(?=\\))")) %>%
   mutate(player_steal = str_extract(play, "(?<=steal by ).*?(?=\\))" )) %>%
   mutate(player_turnover = str_extract(play, "(?<=steal by ).*?(?=\\))")) %>%
   mutate(player_block = str_extract(play, "(?<=block by ).*?(?=\\))")) %>%
   mutate(player_offensive_rebound = str_extract(play, "(?<=Offensive rebound by ).*")) %>%
   mutate(player_defensive_rebound = str_extract(play, "(?<=Defensive rebound by ).*")) %>%
-  mutate(player_travelling = str_extract(play, "(?<=Turnover by ).*? (?=\\(traveling\\))"))
-
+  mutate(player_travelling = str_extract(play, "(?<=Turnover by ).*? (?=\\(traveling\\))")) %>%
+  mutate(season = case_when(
+    (year == 1996) | (year == 1997 & month < 10) ~ "96/97",
+    (year == 1997 & month > 9) | (year == 1998 & month < 10) ~ "97/98",
+    (year == 1998 & month > 9) | (year == 1999 & month < 10) ~ "98/99",
+    (year == 1999 & month > 9) | (year == 2000 & month < 10) ~ "99/00",
+    (year == 2000 & month > 9) | (year == 2001 & month < 10) ~ "00/01",
+    (year == 2001 & month > 9) | (year == 2002 & month < 10) ~ "01/02",
+    (year == 2002 & month > 9) | (year == 2003 & month < 10) ~ "02/03",
+    (year == 2003 & month > 9) | (year == 2004 & month < 10) ~ "03/04",
+    (year == 2004 & month > 9) | (year == 2005 & month < 10) ~ "04/05",
+    (year == 2005 & month > 9) | (year == 2006 & month < 10) ~ "05/06",
+    (year == 2006 & month > 9) | (year == 2007 & month < 10) ~ "06/07",
+    (year == 2007 & month > 9) | (year == 2008 & month < 10) ~ "07/08",
+    (year == 2008 & month > 9) | (year == 2009 & month < 10) ~ "08/09",
+    (year == 2009 & month > 9) | (year == 2010 & month < 10) ~ "09/10",
+    (year == 2010 & month > 9) | (year == 2011 & month < 10) ~ "10/11",
+    (year == 2011 & month > 9) | (year == 2012 & month < 10) ~ "11/12",
+    (year == 2012 & month > 9) | (year == 2013 & month < 10) ~ "12/13",
+    (year == 2013 & month > 9) | (year == 2014 & month < 10) ~ "13/14",
+    (year == 2014 & month > 9) | (year == 2015 & month < 10) ~ "14/15",
+    (year == 2015 & month > 9) | (year == 2016 & month < 10) ~ "15/16",
+    (year == 2016 & month > 9) | (year == 2017 & month < 10) ~ "16/17",
+    (year == 2017 & month > 9) | (year == 2018 & month < 10) ~ "17/18",
+    (year == 2018 & month > 9) | (year == 2019 & month < 10) ~ "18/19",
+    (year == 2019 & month > 9) | (year == 2020 & month < 10) ~ "19/00"))
 
 
 
