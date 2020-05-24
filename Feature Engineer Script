@@ -122,7 +122,8 @@ nba2 <- nba %>%
     (year == 2017 & month > 9) | (year == 2018 & month < 10) ~ "17/18",
     (year == 2018 & month > 9) | (year == 2019 & month < 10) ~ "18/19",
     (year == 2019 & month > 9) | (year == 2020 & month < 10) ~ "19/00") %>%
-    select(-c(away_play, home_play, home_score, away_score, combined_Score)))
+  select(-c(away_play, home_play, home_score, away_score, combined_Score)) %>%
+  filter(!str_detect(play, "^Start of .*")))
 
 
 
