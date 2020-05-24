@@ -97,6 +97,7 @@ nba2 <- nba %>%
   mutate(player_offensive_rebound = str_extract(play, "(?<=Offensive rebound by ).*")) %>%
   mutate(player_defensive_rebound = str_extract(play, "(?<=Defensive rebound by ).*")) %>%
   mutate(player_travelling = str_extract(play, "(?<=Turnover by ).*? (?=\\(traveling\\))")) %>%
+  mutate(player_foul = if_else(!is.na(foul_type), str_extract(play, "(?<=foul by ).*"), "")) %>%
   mutate(season = case_when(
     (year == 1996) | (year == 1997 & month < 10) ~ "96/97",
     (year == 1997 & month > 9) | (year == 1998 & month < 10) ~ "97/98",
@@ -121,7 +122,8 @@ nba2 <- nba %>%
     (year == 2016 & month > 9) | (year == 2017 & month < 10) ~ "16/17",
     (year == 2017 & month > 9) | (year == 2018 & month < 10) ~ "17/18",
     (year == 2018 & month > 9) | (year == 2019 & month < 10) ~ "18/19",
-    (year == 2019 & month > 9) | (year == 2020 & month < 10) ~ "19/00"))
+    (year == 2019 & month > 9) | (year == 2020 & month < 10) ~ "19/00") %>%
+    select(-c(away_play, home_play, home_score, away_score, combined_Score)))
 
 
 
