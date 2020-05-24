@@ -1,7 +1,6 @@
 library(tidyverse)
 
-#this below will prob have to be sourced...
-nba <- read_rds("nba_pbp_full_96_97.rds")
+
 
 #all the feature engineering calls:
 nba2 <- nba %>%
