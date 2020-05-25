@@ -102,4 +102,5 @@ all_years <- bind_rows(nba_1996, nba_1997, nba_1998, nba_1999, nba_2000, nba_200
                         nba_2017, nba_2018, nba_2019, nba_2020)
                         
 
+#that's it for scraping and assembling. Check out the feature engineering file to dissect the data further
           
