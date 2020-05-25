@@ -97,6 +97,7 @@ df <- all_years %>%
   mutate(player_defensive_rebound = str_extract(play, "(?<=Defensive rebound by ).*")) %>%
   mutate(player_travelling = str_extract(play, "(?<=Turnover by ).*? (?=\\(traveling\\))")) %>%
   mutate(player_foul = if_else(!is.na(foul_type), str_extract(play, "(?<=foul by |foul type [12] by )[^()]*[^()\\s]"), "")) %>%
+  mutate(player_draw_foul = str_extract(play, "(?<=\\(drawn by ).*?(?=\\))")) %>%
   mutate(season = case_when(
     (year == 1996) | (year == 1997 & month < 10) ~ "96/97",
     (year == 1997 & month > 9) | (year == 1998 & month < 10) ~ "97/98",
