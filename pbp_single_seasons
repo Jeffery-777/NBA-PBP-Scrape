@@ -1,0 +1,105 @@
+library(rvest)
+library(curl)
+library(tidyverse)
+library(httr)
+
+# get all objects to loop in the urls. All teams since 96/97 are in tm_abr and only active teams will be identified later on
+tm_abr <- c("ATL","BOS","BRK","NJN","CHA", "CHH","CHO","CHI",
+            "CLE","DAL","DEN","DET","GSW","HOU","IND",
+            "LAC","LAL","MEM","MIA","MIL","MIN","NOH", "NOK",
+            "NOP","NYK","OKC","ORL","PHI","PHO","POR",
+            "SEA","SAC","SAS","TOR","UTA","VAN", "WAS","WSB")
+
+days <- c("01","02","03","04","05","06","07","08","09",
+          "10","11","12","13","14","15","16","17","18",
+          "19","20","21","22","23","24","25","26","27",
+          "28","29","30","31")
+
+mnth <- c("01","02","03","04","05","06","07","08","09",
+          "10","11","12")
+  
+  
+#1996 scrape
+
+url <- "https://www.basketball-reference.com/boxscores/pbp/1996{month}{date}0{home_team}.html"
+url2 <- map(.x = c(tm_abr),
+            .f = function(x){gsub(x = url, pattern = "\\{home_team\\}", 
+                                  replacement = x)}) %>% 
+        unlist
+
+url3 <- map(.x = c(days),
+            .f = function(x){gsub(x = url2, pattern = "\\{date\\}", 
+                                  replacement = x)}) %>% 
+        unlist
+
+url4 <- map(.x = c(mnth),
+            .f = function(x){gsub(x = url3, pattern = "\\{month\\}", 
+                                  replacement = x)}) %>% 
+        unlist
+
+#this will take a while, but it ID's which of the urls are active pages
+check_link <- sapply(url4, url_success) %>%
+  as.data.frame() 
+
+#this stores the indices that are active
+link_hit_index <- which(check_link == TRUE)
+
+#now reduce to only links that are active so we don't get an error scraping pages not active
+url_final <- url4[link_hit_index]
+saveRDS(url_final, "activeURLs_1996.rds")
+
+#create vector with all the active urls for the first year of pbp data available - 1996
+url_final <- readRDS("activeURLs_1996.rds")
+
+#map .x is the vector of active urls to run the function on. .f is the giant mess of crap that remains
+
+nba_1996 <- map_dfr(.x = url_final,
+                    .f = function(x){Sys.sleep(2); cat(1); 
+                     df <- read_html(curl(x, handle = curl::new_handle("useragent" = "Mozilla/5.0"))) %>% 
+                       html_nodes("table") %>% 
+                       html_table(fill = T) %>%
+                       .[[1]] %>%
+                       setNames(paste0(c("time","away_play","away_score",
+                                         "combined_Score","home_score", "home_play")))
+
+  away_tm <- df[1,2]
+  home_tm <- df[1,6]
+
+df$away_team <- away_tm
+df$home_team <- home_tm
+df$date <- str_extract(string = x, pattern = "(?<=pbp\\/)\\d{8}")
+df$year <- str_extract(string = x, pattern = "(?<=pbp\\/)\\d{4}")
+df$month <- str_extract(string = x, pattern = "(?<=pbp\\/\\d{4})\\d{2}")
+df$day <- str_extract(string = x, pattern = "(?<=pbp\\/\\d{6})\\d{2}")
+df$playid <- c(1:nrow(df))
+df$gameid <- paste0(df$away_team,df$home_team,df$date)
+df$gameid <- str_replace_all(df$gameid, " ", "")
+
+df 
+
+})
+
+saveRDS(nba_2012, "nba_pbp_calendar_1996.rds")
+
+#Repeat this process for every year. Simply replace teh 1996 in url with 1997 and rerun everything from there with appropriate name changes of 
+#objects to 1997 instead of anything referencing 1996 - especially when it comes to the final saveRDS command so you don't save over 1996. Not that 
+#I've done this on more than one occasion. 
+
+#After you complete saving an RDS file for each calendar year data from 96 to 2020, 
+#you can combine it all in a single massive df. But, you might find R doesn't have the 
+#memory for it. To see how much memory, run:
+
+memory.limit()
+
+#Mine was about 8k and this was not sufficient to bind all data together. So, some stack overflow person 
+#recommended:
+
+memory.limit(size = 56000)
+
+all_years <- bind_rows(nba_1996, nba_1997, nba_1998, nba_1999, nba_2000, nba_2001, nba_2002,
+                        nba_2003, nba_2004, nba_2005, nba_2006, nba_2007, nba_2008, nba_2009
+                        nba_2010, nba_2011, nba_2012, nba_2013, nba_2014, nba_2015, nba_2016,
+                        nba_2017, nba_2018, nba_2019, nba_2020)
+                        
+
+          
