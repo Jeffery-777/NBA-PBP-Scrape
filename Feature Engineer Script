@@ -1,9 +1,8 @@
 library(tidyverse)
 
+#load the behemoth all_years data frame from the scrape file of this repo and get ready to wait while this massive calls does all the work
 
-
-#all the feature engineering calls:
-nba2 <- nba %>%
+df <- all_years %>%
   mutate_at(c("month", "day", "playid"), as.numeric) %>%
   filter(time != "Time") %>%
   separate(time, c("minutes","seconds","tenths"), remove = FALSE) %>%
@@ -34,8 +33,9 @@ nba2 <- nba %>%
     nchar(away_play) > 0 ~ away_play,
     nchar(away_play) == 0 ~ home_play
   )) %>%
-  mutate(shooter = str_extract(
+  mutate(player_fg = str_extract(
       play, "^.*?(?=\\s+(?:misses|makes)\\b)")) %>%
+  #see the code at the bottom of this file I ran to figure out all the possible foul types the data contains
   mutate(foul_type = case_when(
     str_detect(play, "^Personal foul.*") ~ "Personal",
     str_detect(play, "^Shooting foul.*") ~ "Shooting",
@@ -128,10 +128,9 @@ nba2 <- nba %>%
 
 
 
-#notes on finding levels from above. Not important but shows how to make sure the casewhen calls account for everything:
-    
-#heres how I figured out all the foul types:
-fouls <- nba2 %>%
+#notes on finding foul type levels as mentioned above: 
+  
+fouls <- all_years %>%
   mutate(foul = str_extract(play, "\\bfoul\\b")) %>%
   drop_na(foul) %>%
   select(play) %>%
