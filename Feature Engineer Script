@@ -122,7 +122,7 @@ df <- all_years %>%
     (year == 2016 & month > 9) | (year == 2017 & month < 10) ~ "16/17",
     (year == 2017 & month > 9) | (year == 2018 & month < 10) ~ "17/18",
     (year == 2018 & month > 9) | (year == 2019 & month < 10) ~ "18/19",
-    (year == 2019 & month > 9) | (year == 2020 & month < 10) ~ "19/00") %>%
+    (year == 2019 & month > 9) | (year == 2020 & month < 10) ~ "19/20") %>%
   select(-c(away_play, home_play, home_score, away_score, combined_Score)) %>%
   filter(!str_detect(play, "^Start of .*")))
 
