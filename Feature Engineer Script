@@ -3,6 +3,7 @@ library(tidyverse)
 #load the behemoth all_years data frame from the scrape file of this repo and get ready to wait while this massive calls does all the work
 
 df <- all_years %>%
+%>%
   mutate_at(c("month", "day", "playid"), as.numeric) %>%
   filter(time != "Time") %>%
   separate(time, c("minutes","seconds","tenths"), remove = FALSE) %>%
@@ -79,7 +80,8 @@ df <- all_years %>%
     str_detect(play, "makes") & is.na(free_throw_make)  ~ "1",
     TRUE ~ "NA"
   )) %>% 
-  mutate_at(vars(fg_result), as.numeric) %>%
+  mutate_at(c("fg_result", "fg_length"), as.numeric) %>%
+  mutate(fg_length = if_else(is.na(fg_length) & is.na(free_throw_make) & !is.na(player_fg), 0, fg_length)) %>%
     #extract shots with ft lengths
   mutate(shot_type = str_extract(play, "(?<=-pt ).*?(?= from)")) %>%
   #combine with shots w no ft length (like layups)
@@ -87,8 +89,6 @@ df <- all_years %>%
   #find parentheses and remove leaving just shot type
   mutate(shot_type = if_else(str_detect(shot_type, ".*?\\("), str_extract(shot_type, ".*?(?= \\()"), shot_type)) %>%
   mutate(shot_type = trimws(shot_type)) %>%
-  #playoff date cutoff will need to be customized per year referencing nba ref
-  #mutate(playoffs = if_else(month >= 4 & day >= 24, "playoffs", "regular"))%>%
   mutate(player_assist = str_extract(play, "(?<=\\(assist by ).*?(?=\\))")) %>%
   mutate(player_steal = str_extract(play, "(?<=steal by ).*?(?=\\))" )) %>%
   mutate(player_turnover = str_extract(play, "(?<=steal by ).*?(?=\\))")) %>%
@@ -122,8 +122,10 @@ df <- all_years %>%
     (year == 2016 & month > 9) | (year == 2017 & month < 10) ~ "16/17",
     (year == 2017 & month > 9) | (year == 2018 & month < 10) ~ "17/18",
     (year == 2018 & month > 9) | (year == 2019 & month < 10) ~ "18/19",
-    (year == 2019 & month > 9) | (year == 2020 & month < 10) ~ "19/20") %>%
-        mutate(playoffs = case_when(
+    (year == 2019 & month > 9) | (year == 2020 & month < 10) ~ "19/00")) %>%
+  select(-c(away_play, home_play, home_score, away_score, combined_Score)) %>%
+  filter(!str_detect(play, "^Start of .*")) %>%
+    mutate(playoffs = case_when(
       season == "96/97" & (month > 4) | (month = 4 & day >= 24) ~ 1,
       season == "96/97" & (month < 4) | (month = 4 & day < 24) ~ 0,
       season == "97/98" & (month > 4) | (month = 4 & day >= 23) ~ 1,
@@ -133,48 +135,44 @@ df <- all_years %>%
       season == "99/00" & (month > 4) | (month = 4 & day >= 22) ~ 1,
       season == "99/00" & (month < 4) | (month = 4 & day < 22) ~ 0, 
       season == "00/01" & (month > 4) | (month = 4 & day >= 21) ~ 1,
-      season == "00/01" & (month < 4) | (month = 4 & day < 21) ~ 0,          
+      season == "00/01" & (month < 4) | (month = 4 & day < 21) ~ 0,
       season == "01/02" & (month > 4) | (month = 4 & day >= 20) ~ 1,
       season == "01/02" & (month < 4) | (month = 4 & day < 20) ~ 0,
       season == "02/03" & (month > 4) | (month = 4 & day >= 19) ~ 1,
-      season == "02/03" & (month < 4) | (month = 4 & day < 19) ~ 0,          
+      season == "02/03" & (month < 4) | (month = 4 & day < 19) ~ 0, 
       season == "03/04" & (month > 4) | (month = 4 & day >= 17) ~ 1,
-      season == "03/04" & (month < 4) | (month = 4 & day < 17) ~ 0, 
-      season == "04/05" & (month > 4) | (month = 4 & day >= 23) ~ 1,
-      season == "04/05" & (month < 4) | (month = 4 & day < 23) ~ 0, 
-      season == "05/06" & (month > 4) | (month = 4 & day >= 22) ~ 1,
-      season == "05/06" & (month < 4) | (month = 4 & day < 22) ~ 0,          
-      season == "06/07" & (month > 4) | (month = 4 & day >= 21) ~ 1,
-      season == "06/07" & (month < 4) | (month = 4 & day < 21) ~ 0,  
+      season == "03/04" & (month < 4) | (month = 4 & day < 17) ~ 0,  
+      season == "05/06" & (month > 4) | (month = 4 & day >= 23) ~ 1,
+      season == "05/06" & (month < 4) | (month = 4 & day < 23) ~ 0, 
+      season == "06/07" & (month > 4) | (month = 4 & day >= 22) ~ 1,
+      season == "06/07" & (month < 4) | (month = 4 & day < 22) ~ 0,  
       season == "07/08" & (month > 4) | (month = 4 & day >= 19) ~ 1,
       season == "07/08" & (month < 4) | (month = 4 & day < 19) ~ 0,
       season == "08/09" & (month > 4) | (month = 4 & day >= 18) ~ 1,
-      season == "08/09" & (month < 4) | (month = 4 & day < 18) ~ 0,          
+      season == "08/09" & (month < 4) | (month = 4 & day < 18) ~ 0, 
       season == "09/10" & (month > 4) | (month = 4 & day >= 17) ~ 1,
       season == "09/10" & (month < 4) | (month = 4 & day < 17) ~ 0,
-      season == "10/11" & (month > 4) | (month = 4 & day >= 16) ~ 1,
-      season == "10/11" & (month < 4) | (month = 4 & day < 16) ~ 0,          
+      season == "10/11" & (month > 4) | (month = 4 & day >= 17) ~ 1,
+      season == "10/11" & (month < 4) | (month = 4 & day < 17) ~ 0,   
       season == "11/12" & (month > 4) | (month = 4 & day >= 28) ~ 1,
       season == "11/12" & (month < 4) | (month = 4 & day < 28) ~ 0,  
       season == "12/13" & (month > 4) | (month = 4 & day >= 20) ~ 1,
-      season == "12/13" & (month < 4) | (month = 4 & day < 20) ~ 0,          
+      season == "12/13" & (month < 4) | (month = 4 & day < 20) ~ 0, 
       season == "13/14" & (month > 4) | (month = 4 & day >= 19) ~ 1,
       season == "13/14" & (month < 4) | (month = 4 & day < 19) ~ 0,  
       season == "14/15" & (month > 4) | (month = 4 & day >= 18) ~ 1,
-      season == "14/15" & (month < 4) | (month = 4 & day < 18) ~ 0,          
+      season == "14/15" & (month < 4) | (month = 4 & day < 18) ~ 0,  
       season == "15/16" & (month > 4) | (month = 4 & day >= 16) ~ 1,
       season == "15/16" & (month < 4) | (month = 4 & day < 16) ~ 0,  
       season == "16/17" & (month > 4) | (month = 4 & day >= 15) ~ 1,
-      season == "16/17" & (month < 4) | (month = 4 & day < 15) ~ 0,          
+      season == "16/17" & (month < 4) | (month = 4 & day < 15) ~ 0,  
       season == "17/18" & (month > 4) | (month = 4 & day >= 14) ~ 1,
       season == "17/18" & (month < 4) | (month = 4 & day < 14) ~ 0,  
       season == "18/19" & (month > 4) | (month = 4 & day >= 13) ~ 1,
-      season == "18/19" & (month < 4) | (month = 4 & day < 13) ~ 0,          
+      season == "18/19" & (month < 4) | (month = 4 & day < 13) ~ 0, 
       season == "19/20" & (month > 4) | (month = 4 & day >= 24) ~ 1,
       season == "19/20" ~ 0
-    )) %>%
-  select(-c(away_play, home_play, home_score, away_score, combined_Score)) %>%
-  filter(!str_detect(play, "^Start of .*")))
+    ))
 
 
 
