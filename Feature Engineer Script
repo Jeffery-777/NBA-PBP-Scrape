@@ -3,7 +3,6 @@ library(tidyverse)
 #load the behemoth all_years data frame from the scrape file of this repo and get ready to wait while this massive calls does all the work
 
 df <- all_years %>%
-%>%
   mutate_at(c("month", "day", "playid"), as.numeric) %>%
   filter(time != "Time") %>%
   separate(time, c("minutes","seconds","tenths"), remove = FALSE) %>%
@@ -153,7 +152,7 @@ df <- all_years %>%
       season == "09/10" & (month > 4) | (month = 4 & day >= 17) ~ 1,
       season == "09/10" & (month < 4) | (month = 4 & day < 17) ~ 0,
       season == "10/11" & (month > 4) | (month = 4 & day >= 17) ~ 1,
-      season == "10/11" & (month < 4) | (month = 4 & day < 17) ~ 0,   
+      season == "10/11" & (month < 4) | (month = 4 & day < 17) ~ 0, 
       season == "11/12" & (month > 4) | (month = 4 & day >= 28) ~ 1,
       season == "11/12" & (month < 4) | (month = 4 & day < 28) ~ 0,  
       season == "12/13" & (month > 4) | (month = 4 & day >= 20) ~ 1,
