@@ -3,49 +3,64 @@ library(tidyverse)
 #load the behemoth all_years data frame from the scrape file of this repo and get ready to wait while this massive calls does all the work
 
 df <- all_years %>%
-  mutate_at(c("month", "day", "playid"), as.numeric) %>%
+   mutate_at(c("month", "day", "playid"), as.numeric) %>%
   filter(time != "Time") %>%
   separate(time, c("minutes","seconds","tenths"), remove = FALSE) %>%
   mutate_at(c("minutes","seconds","tenths"), as.numeric) %>%
   mutate(quarter = 0) %>%
   mutate(quarter = case_when(
     away_play == "Start of 1st quarter" ~ 1,
-    away_play == "Start of 2nd quarter" ~ 2,
-    away_play == "Start of 3rd quarter" ~ 3,
-    away_play == "Start of 4th quarter" ~ 4,
-    away_play == "Start of 1st overtime" ~ 5,
-    away_play == "Start of 2nd overtime" ~ 6,
-    away_play == "Start of 3rd overtime" ~ 7,
-    away_play == "Start of 4th overtime" ~ 7
+    away_play == "Start of 2nd quarter" ~ 1,
+    away_play == "Start of 3rd quarter" ~ 1,
+    away_play == "Start of 4th quarter" ~ 1,
+    away_play == "Start of 1st overtime" ~ 1,
+    away_play == "Start of 2nd overtime" ~ 1,
+    away_play == "Start of 3rd overtime" ~ 1,
+    away_play == "Start of 4th overtime" ~ 1
   )) %>%
   mutate(quarter = ifelse(is.na(quarter), 0, quarter)) %>%
   group_by(gameid) %>%
   mutate(qtr = case_when(
     cumsum(quarter) == 1 ~ 1,
-    cumsum(quarter) == 3 ~ 2,
-    cumsum(quarter) == 6 ~ 3,
-    cumsum(quarter) == 10 ~ 4,
-    cumsum(quarter) == 15 ~ 5,
-    cumsum(quarter) == 21 ~ 6,
-    cumsum(quarter) == 28 ~ 7
+    cumsum(quarter) == 2 ~ 2,
+    cumsum(quarter) == 3 ~ 3,
+    cumsum(quarter) == 4 ~ 4,
+    cumsum(quarter) == 5 ~ 5,
+    cumsum(quarter) == 6 ~ 6,
+    cumsum(quarter) == 7 ~ 7
   )) %>%
   mutate(play = case_when(
     nchar(away_play) > 0 ~ away_play,
     nchar(away_play) == 0 ~ home_play
   )) %>%
-  mutate(player_fg = str_extract(
+  mutate(player_shot = str_extract(
       play, "^.*?(?=\\s+(?:misses|makes)\\b)")) %>%
   #see the code at the bottom of this file I ran to figure out all the possible foul types the data contains
   mutate(foul_type = case_when(
     str_detect(play, "^Personal foul.*") ~ "Personal",
     str_detect(play, "^Shooting foul.*") ~ "Shooting",
-    str_detect(play, "^Personal four by.*") ~ "Personal",
     str_detect(play, "^Loose ball foul.*") ~ "Loose Ball",
     str_detect(play, "^Technical foul.*") ~ "Technical",
     str_detect(play, "^Offensive foul.*") ~ "Offensive",
     str_detect(play, "^Def 3 sec tech foul.*") ~ "Def Three Seconds",
     str_detect(play, "^Flagrant foul type 1.*") ~ "Flagrant 1",
     str_detect(play, "^Away from play foul.*") ~ "Away From Play",
+    str_detect(play, "^Unkown foul.*") ~ "Unknown Foul",
+    str_detect(play, "^Ill def tech foul.*") ~ "Ill Def Technical Foul",
+    str_detect(play, "^Double Personal Foul.*") ~ "Double Personal Foul",
+    str_detect(play, "^Clear path foul.*") ~ "Clear Path",
+    str_detect(play, "^Hanging tech foul.*") ~ "Hanging Technical",
+    str_detect(play, "^Taunting technical foul.*") ~ "Taunting",
+    str_detect(play, "^Inbound foul.*") ~ "Inbound Foul",
+    str_detect(play, "^Delay tech foul.*") ~ "Delay Technical Foul",
+    str_detect(play, "^Non unsport tech foul.*") ~ "Non Unsport Technical Foul",
+    str_detect(play, "^Elbow foul.*") ~ "Elbow Foul",
+    str_detect(play, "^Punching foul.*") ~ "Punching Foul",
+    str_detect(play, "^Offensive charge foul.*") ~ "Offensive Charge",
+    str_detect(play, "^Personal block foul.*") ~ "Personal Block",
+    str_detect(play, "^Personal take foul.*") ~ "Personal Take",
+    str_detect(play, "^Shooting block foul.*") ~ "Shooting Block",
+    str_detect(play, "^Excess timeout tech foul.*") ~ "Excess Timeout Technical Foul",
     str_detect(play, "^Flagrant foul type 2.*") ~ "Flagrant 2")) %>%
   mutate(free_throw_foul_type = case_when(
     str_detect(play, ".*?[makes|misses]\\s.*?free\\sthrow.*") ~ lag(foul_type))) %>%
@@ -80,7 +95,8 @@ df <- all_years %>%
     TRUE ~ "NA"
   )) %>% 
   mutate_at(c("fg_result", "fg_length"), as.numeric) %>%
-  mutate(fg_length = if_else(is.na(fg_length) & is.na(free_throw_make) & !is.na(player_fg), 0, fg_length)) %>%
+  #shots at rim need to be length of 0 which is fixed below
+  mutate(fg_length = if_else(is.na(fg_length) & is.na(free_throw_make) & !is.na(player_shot), 0, fg_length)) %>%
     #extract shots with ft lengths
   mutate(shot_type = str_extract(play, "(?<=-pt ).*?(?= from)")) %>%
   #combine with shots w no ft length (like layups)
@@ -175,13 +191,3 @@ df <- all_years %>%
 
 
 
-
-#notes on finding foul type levels as mentioned above: 
-  
-fouls <- all_years %>%
-  mutate(foul = str_extract(play, "\\bfoul\\b")) %>%
-  drop_na(foul) %>%
-  select(play) %>%
-  mutate(type = str_extract(play, ".*(?=\\bby\\b)")) %>%
-  ungroup() %>%
-  distinct(type)
