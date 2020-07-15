@@ -5,9 +5,9 @@ If you just want the data - see "Quick File Download - Skip the Scrape!" and pas
 
 To lessen the burden of scraping on bbref, I recommend you just use the aforementioned process to get the data. The scrape walk through (pbp_season_scrape) is moreso for learning and figuring out how to adapt to similar tables from bbref or other sports ref sites you might be interested in. 
 
-After the scraping, the "Feature Engineer Script" is all the post scrape data manipulation to create the final product. This should all be perfomred in the "Quick File Download - Skip the Scrape!" page as well so no need to do anything other than download these.
+After the scraping, the "Feature Engineer Script" is all the post scrape data manipulation to create the final product. This should all be performed in the "Quick File Download - Skip the Scrape!" page as well so no need to do anything other than download these.
 
-I have a walk through in video form as well on YouTube that can be seen here (INSERT WHEN DONE)
+I have a walk through in video form as well on YouTube that can be seen here. It's not great but I tried: https://www.youtube.com/watch?v=5m7vUNR0-fg&t=2853s
 
 Jeff Henderson
 Stathole Sports
