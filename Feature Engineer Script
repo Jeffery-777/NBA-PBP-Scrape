@@ -1,10 +1,10 @@
 library(tidyverse)
 
-#load the behemoth all_years data frame from the scrape file of this repo and get ready to wait while this massive calls does all the work
+#load the behemoth all_years data frame from the scrape file of this repo and get ready to wait while this massive calls does all the work. If you're better at R than I am you could probs
+#do this using data.frame syntax and would actually be cool if someone did as this would take less than like 8 hours to run...
 
 NBAScrapR <- all_years %>%
-%>%
-   mutate_at(c("month", "day", "playid"), as.numeric) %>%
+  mutate_at(c("month", "day", "playid"), as.numeric) %>%
   filter(time != "Time") %>%
   separate(time, c("minutes","seconds","tenths"), remove = FALSE) %>%
   mutate_at(c("minutes","seconds","tenths"), as.numeric) %>%
