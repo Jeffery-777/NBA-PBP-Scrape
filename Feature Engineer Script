@@ -183,8 +183,5 @@ NBAScrapR <- all_years %>%
   player_travelling, player_turnover, home_score_before_shot, away_score_before_shot, difference_before_play, 
   home_score_after_shot, away_score_after_shot, difference_after_play, home_pts_added, away_pts_added)
 
-# one quick fix ~ make date column a date data type  
-NBAScrapR$date <- transform(NBAScrapR$date, x = as.Date(as.character(NBAScrapR$date), "%Y%m%d"))
-
 
 
