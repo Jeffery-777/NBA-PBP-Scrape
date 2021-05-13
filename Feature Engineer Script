@@ -8,7 +8,11 @@ NBAScrapR <- all_years %>%
   filter(time != "Time") %>%
   separate(time, c("minutes","seconds","tenths"), remove = FALSE) %>%
   mutate_at(c("minutes","seconds","tenths"), as.numeric) %>%
-    mutate(quarter = case_when(
+  mutate(play = case_when(
+    nchar(away_play) > 0 ~ away_play,
+    nchar(away_play) == 0 ~ home_play
+  )) %>% 
+  mutate(quarter = case_when(
     str_detect(play, "End of 1st quarter") ~ 1,
     str_detect(play, "End of 2nd quarter") ~ 1,
     str_detect(play, "End of 3rd quarter") ~ 1,
@@ -36,12 +40,8 @@ NBAScrapR <- all_years %>%
     cumsum(quarter) == 9 ~ 10,
     cumsum(quarter) == 10 ~ 11
   )) %>%
-  mutate(play = case_when(
-    nchar(away_play) > 0 ~ away_play,
-    nchar(away_play) == 0 ~ home_play
-  )) %>%
   mutate(player_shot = str_extract(
-      play, "^.*?(?=\\s+(?:misses|makes)\\b)")) %>%
+    play, "^.*?(?=\\s+(?:misses|makes)\\b)")) %>%
   #see the code at the bottom of this file I ran to figure out all the possible foul types the data contains
   mutate(foul_type = case_when(
     str_detect(play, "^Personal foul.*") ~ "Personal",
@@ -79,8 +79,8 @@ NBAScrapR <- all_years %>%
   #neutral plays are listed in both teams so this parses those out
   mutate(possession = if_else(nchar(away_play) > 0 & nchar(home_play) > 0, 
                               "", if_else(nchar(away_play) > 0, 
-                                      away_team,
-                                      home_team))) %>%
+                                          away_team,
+                                          home_team))) %>%
   mutate(away_pts_added = as.numeric(sub("\\D\\+", "",
                                          away_score))) %>%
   mutate(home_pts_added = as.numeric(sub("\\D\\+", "",
@@ -104,7 +104,7 @@ NBAScrapR <- all_years %>%
   mutate_at(c("fg_result", "fg_length"), as.numeric) %>%
   #shots at rim need to be length of 0 which is fixed below
   mutate(fg_length = if_else(is.na(fg_length) & is.na(free_throw_make) & !is.na(player_shot), 0, fg_length)) %>%
-    #extract shots with ft lengths
+  #extract shots with ft lengths
   mutate(shot_type = str_extract(play, "(?<=-pt ).*?(?= from)")) %>%
   #combine with shots w no ft length (like layups)
   mutate(shot_type = if_else(is.na(shot_type), str_extract(play, "(?<=-pt ).*"), shot_type)) %>% 
@@ -147,40 +147,37 @@ NBAScrapR <- all_years %>%
     (year == 2019 & month > 9) | (year == 2020 & month < 10) ~ "19/20")) %>%
   select(-c(away_play, home_play, home_score, away_score, combined_Score)) %>%
   filter(!str_detect(play, "^Start of .*")) %>%
-    mutate(playoffs = case_when(
-      season == "96/97" & (month > 4 & month < 9) | season == "96/97" & (month == 4 & day >= 24) ~ 1,
-      season == "97/98" & (month > 4 & month < 9) | season == "97/98" & (month = 4 & day >= 23) ~ 1,
-      season == "98/99" & (month > 5 & month < 9) | season == "98/99" & (month = 5 & day >= 8) ~ 1,
-      season == "99/00" & (month > 4 & month < 9) | season == "99/00" & (month = 4 & day >= 22) ~ 1,
-      season == "00/01" & (month > 4 & month < 9) | season == "00/01" & (month = 4 & day >= 21) ~ 1,
-      season == "01/02" & (month > 4 & month < 9) | season == "01/02" & (month = 4 & day >= 20) ~ 1,
-      season == "02/03" & (month > 4 & month < 9) | season == "02/03" & (month = 4 & day >= 19) ~ 1,
-      season == "03/04" & (month > 4 & month < 9) | season == "03/04" & (month = 4 & day >= 17) ~ 1,
-      season == "05/06" & (month > 4 & month < 9) | season == "04/05" & (month = 4 & day >= 23) ~ 1,
-      season == "06/07" & (month > 4 & month < 9) | season == "05/06" & (month = 4 & day >= 22) ~ 1,
-      season == "07/08" & (month > 4 & month < 9) | season == "06/07" & (month = 4 & day >= 19) ~ 1,
-      season == "08/09" & (month > 4 & month < 9) | season == "07/08" & (month = 4 & day >= 18) ~ 1,
-      season == "09/10" & (month > 4 & month < 9) | season == "08/09" & (month = 4 & day >= 17) ~ 1,
-      season == "10/11" & (month > 4 & month < 9) | season == "09/10" & (month = 4 & day >= 17) ~ 1,
-      season == "11/12" & (month > 4 & month < 9) | season == "10/11" & (month = 4 & day >= 28) ~ 1,
-      season == "12/13" & (month > 4 & month < 9) | season == "11/12" & (month = 4 & day >= 20) ~ 1,
-      season == "13/14" & (month > 4 & month < 9) | season == "12/13" & (month = 4 & day >= 19) ~ 1,
-      season == "14/15" & (month > 4 & month < 9) | season == "13/14" & (month = 4 & day >= 18) ~ 1,
-      season == "15/16" & (month > 4 & month < 9) | season == "14/15" & (month = 4 & day >= 16) ~ 1,
-      season == "16/17" & (month > 4 & month < 9) | season == "15/16" & (month = 4 & day >= 15) ~ 1,
-      season == "17/18" & (month > 4 & month < 9) | season == "16/17" & (month = 4 & day >= 14) ~ 1,
-      season == "18/19" & (month > 4 & month < 9) | season == "17/18" & (month = 4 & day >= 13) ~ 1,
-      season == "19/20" & (month > 4 & month < 9) | season == "18/19" & (month = 4 & day >= 24) ~ 1,
-      TRUE ~ 0
-    )) %>%
+  mutate(playoffs = case_when(
+    season == "96/97" & (month > 4 & month < 9) | season == "96/97" & (month == 4 & day >= 24) ~ 1,
+    season == "97/98" & (month > 4 & month < 9) | season == "97/98" & (month = 4 & day >= 23) ~ 1,
+    season == "98/99" & (month > 5 & month < 9) | season == "98/99" & (month = 5 & day >= 8) ~ 1,
+    season == "99/00" & (month > 4 & month < 9) | season == "99/00" & (month = 4 & day >= 22) ~ 1,
+    season == "00/01" & (month > 4 & month < 9) | season == "00/01" & (month = 4 & day >= 21) ~ 1,
+    season == "01/02" & (month > 4 & month < 9) | season == "01/02" & (month = 4 & day >= 20) ~ 1,
+    season == "02/03" & (month > 4 & month < 9) | season == "02/03" & (month = 4 & day >= 19) ~ 1,
+    season == "03/04" & (month > 4 & month < 9) | season == "03/04" & (month = 4 & day >= 17) ~ 1,
+    season == "05/06" & (month > 4 & month < 9) | season == "04/05" & (month = 4 & day >= 23) ~ 1,
+    season == "06/07" & (month > 4 & month < 9) | season == "05/06" & (month = 4 & day >= 22) ~ 1,
+    season == "07/08" & (month > 4 & month < 9) | season == "06/07" & (month = 4 & day >= 19) ~ 1,
+    season == "08/09" & (month > 4 & month < 9) | season == "07/08" & (month = 4 & day >= 18) ~ 1,
+    season == "09/10" & (month > 4 & month < 9) | season == "08/09" & (month = 4 & day >= 17) ~ 1,
+    season == "10/11" & (month > 4 & month < 9) | season == "09/10" & (month = 4 & day >= 17) ~ 1,
+    season == "11/12" & (month > 4 & month < 9) | season == "10/11" & (month = 4 & day >= 28) ~ 1,
+    season == "12/13" & (month > 4 & month < 9) | season == "11/12" & (month = 4 & day >= 20) ~ 1,
+    season == "13/14" & (month > 4 & month < 9) | season == "12/13" & (month = 4 & day >= 19) ~ 1,
+    season == "14/15" & (month > 4 & month < 9) | season == "13/14" & (month = 4 & day >= 18) ~ 1,
+    season == "15/16" & (month > 4 & month < 9) | season == "14/15" & (month = 4 & day >= 16) ~ 1,
+    season == "16/17" & (month > 4 & month < 9) | season == "15/16" & (month = 4 & day >= 15) ~ 1,
+    season == "17/18" & (month > 4 & month < 9) | season == "16/17" & (month = 4 & day >= 14) ~ 1,
+    season == "18/19" & (month > 4 & month < 9) | season == "17/18" & (month = 4 & day >= 13) ~ 1,
+    season == "19/20" & (month > 4 & month < 9) | season == "18/19" & (month = 4 & day >= 24) ~ 1,
+    TRUE ~ 0
+  )) %>%
   mutate(qtr_seconds_remaining = (minutes * 60) + seconds) %>%
-  select(-quarter) %>% 
-  select(season, year, playoffs, date, month, day, gameid, home_team, away_team, quarter = qtr, 
-  qtr_seconds_remaining, minutes, seconds, playid, possession, play, shot_type, fg_result, 
-  fg_length, free_throw_make, free_throw_foul_type, player_shot, player_assist, player_defensive_rebound, 
-  player_offensive_rebound, player_steal, player_block, player_draw_foul, player_foul, foul_type, 
-  player_travelling, player_turnover, home_score_before_shot, away_score_before_shot, difference_before_play, 
-  home_score_after_shot, away_score_after_shot, difference_after_play, home_pts_added, away_pts_added)
-
-
+  select(season, year, playoffs, date, month, day, gameid, home_team, away_team, quarter, 
+         qtr_seconds_remaining, minutes, seconds, playid, possession, play, shot_type, fg_result, 
+         fg_length, free_throw_make, free_throw_foul_type, player_shot, player_assist, player_defensive_rebound, 
+         player_offensive_rebound, player_steal, player_block, player_draw_foul, player_foul, foul_type, 
+         player_travelling, player_turnover, home_score_before_shot, away_score_before_shot, difference_before_play, 
+         home_score_after_shot, away_score_after_shot, difference_after_play, home_pts_added, away_pts_added)
 
